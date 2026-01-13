@@ -71,7 +71,6 @@ mi4 - lum_s\
 mi5 - S9_s\
 
 ```{r}
-
 TCS_IDEAL_data$Individual <- as.factor(TCS_IDEAL_data$Individual)
 TCS_IDEAL_data$Type <- as.factor(TCS_IDEAL_data$Type)
 TCS_IDEAL_data$Nestbox <- as.factor(TCS_IDEAL_data$Nestbox)
@@ -91,9 +90,9 @@ TCS_IDEAL_data.pala <- subset(TCS_IDEAL_data, Region == "Palate")
 
 ```{r}
 
-modelsummary(list(mi1.side, mi1.maxi, mi1.mand, mi1.pala),
-             statistic = NULL,
-             estimate  = "{estimate} [{std.error}]")
+# modelsummary(list(mi1.side, mi1.maxi, mi1.mand, mi1.pala),
+#              statistic = NULL,
+#              estimate  = "{estimate} [{std.error}]")
 
 ```
 
@@ -127,40 +126,52 @@ h.theta_s.sum <- stargazer(mi1.side, mi1.maxi, mi1.mand, mi1.pala, digits = 2, t
 
 ```{r}
 summary(mi1.side)
-mi1.side.TypeAge <-lmer(h.theta_s ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi1.side.TypeAge <- lmer(h.theta_s ~ TypeAge + (1 | Individual) + (1 | Nestbox), data = TCS_IDEAL_data.side)
 mi1.side.EM <- emmeans(mi1.side.TypeAge, ~TypeAge)
 
+mi1.side.contr <- contrast(mi1.side.EM, list(
+    B1_D2 = c(-1, 0, 0, 1),
+    D1_B2 = c(0, 1, -1, 0),
+    B1_D1 = c(1, 0, -1, 0),
+    B2_D2 = c(0, 1, 0, -1)
+))
 
+forplot <- summary(mi1.side.contr)
+plottext_B1D1 <- paste0(
+    round(forplot[3, "estimate"], 2), "(",
+    round(forplot[3, "SE"], 2), ")"
+)
+plottext_B2D2 <- paste0(
+    round(forplot[4, "estimate"], 2), "(",
+    round(forplot[4, "SE"], 2), ")"
+)
+
+confint(mi1.side.contr) ## output z CI
 
 plot.mi1.side <- plot(mi1.side.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans h.theta_s Side", plotit = F)
 
-head(plot.mi1.side) #sprawdzic kolejnosc grup w tabeli i dopisac zmienna z etykeita dla kolorou i linii laczacej grupy
+head(plot.mi1.side) # sprawdzic kolejnosc grup w tabeli i dopisac zmienna z etykeita dla kolorou i linii laczacej grupy
 
 plot.mi1.side$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
-plot.mi1.side$group <- c("BF", "DF", "DF" ,"BF")
-plot.mi1.side$group1 <- c("A1", "A2", "A1" ,"A2")
+plot.mi1.side$group <- c("BF", "DF", "DF", "BF")
+plot.mi1.side$group1 <- c("A1", "A2", "A1", "A2")
 
-psidetheta <- ggplot(plot.mi1.side, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
-  ggtitle("Flanges") + 
-  geom_hline(yintercept = plot.mi1.side[3, "the.emmean"], alpha = 0.5, lty = 2) +
-  geom_line(aes(group = group1), color = "black") + 
-  geom_point(size = 4)+
-  geom_errorbar(lwd = 1, width = 0) +
-  theme_bw() + theme(text = element_text(size = 12)) +
-  theme(legend.position = "none") +
-  ylab ("Hue") + xlab("Group")  +
-  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12" , "Bright\nAge:12"))
-  
+psidetheta <- ggplot(plot.mi1.side, aes(x = TypeAge, y = the.emmean, ymin = lower.CL, ymax = upper.CL, color = group)) +
+    ggtitle("Flanges") +
+    geom_hline(yintercept = plot.mi1.side[3, "the.emmean"], alpha = 0.5, lty = 2) +
+    geom_line(aes(group = group1), color = "black") +
+    geom_point(size = 4) +
+    geom_errorbar(lwd = 1, width = 0) +
+    # geom_text(label = plottext_B1D1, x = 1.5, y = 0.225, color = "gray40") +
+    # geom_text(label = plottext_B2D2, x = 3.5, y = 0.225, color = "gray40") +
+    theme_bw() +
+    theme(text = element_text(size = 12)) +
+    theme(legend.position = "none") +
+    ylab("Hue") +
+    xlab("Group") +
+    scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12", "Bright\nAge:12"))
+
 psidetheta
-
-
-mi1.side.contr <- contrast(mi1.side.EM, list(B1_D2 = c(-1,0,0,1), 
-                                            D1_B2 = c(0,1,-1,0),
-                                            B1_D1 = c(-1,0,1,0), 
-                                            B2_D2 = c(0,1,0,-1))) 
-
-confint(mi1.side.contr) ##output z CI
-
 ```
 
 ## Maxilla
