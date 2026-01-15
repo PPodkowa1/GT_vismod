@@ -77,6 +77,8 @@ bright.specs <- procspec(bright.specs, opt = "smooth", span = 0.2)
 ```{r}
 is.rspec(bright.specs)
 vm_bright <- vismodel(bright.specs, visual = "avg.uv", illum = bright.luminant, qcatch="Qi", relative=F, achromatic = "bt.dc", trans = "bluetit", vonkries = F)
+
+plot1 <- plot(bright.luminant, type = "overlay")
 ```
 
 ### Visual model for dark nest boxes

@@ -1,0 +1,1282 @@
+---
+git---
+toc: true
+toc-depth: 3
+title: "Mixed model analysis - summary (IDEAL ILLUMINANT)"
+format: html
+editor: visual
+---
+
+Open .RData file "new_data.RData"
+
+```{r}
+load("../data.RData")
+```
+
+# Mixed models analysis
+
+```{r}
+#| echo: false
+#| output: false
+
+#load libraries
+library(gapminder)
+library(emmeans)
+library(scales)
+library(stargazer)
+library(pavo)
+library(readr)
+library(dplyr)
+library(lme4)
+library(nlme)
+library(lmerTest)
+library(afex)
+library(multcomp)
+library(mapproj)
+library(ggplot2)
+library(patchwork)
+library(modelsummary)
+library(ggpubr)
+
+
+```
+
+```{r}
+#load("../data.RData")
+
+#add new variable TypeAge
+TCS_IDEAL_data <- TCS_IDEAL_data %>%
+  mutate(TypeAge = paste0(Type, Age))
+#scale S9
+TCS_IDEAL_data <- TCS_IDEAL_data %>%
+
+  mutate(h.theta_s = scale(h.theta),
+         h.phi_s = scale(h.phi),
+         r.achieved_s = scale(r.achieved),
+         B1_s = scale(B1), 
+         H4_s = scale(H4),
+         S9_s = scale(S9), 
+         S5_s = scale(S5),
+         lum_s = scale(lum),
+         Tarsus_s = scale(Tarsus),
+         Mass_s = scale(Mass),
+         Head_s = scale(Head),
+         Wing_s= scale(Wing))         
+                             
+```
+
+mi - (m)odel (i)ncludes ideal illuminant
+
+Dependent variables in models:
+
+mi1 - h.theta_s\
+mi2 - h.phi_s\
+mi3 - r.achieved_s\
+mi4 - lum_s\
+mi5 - S9_s\
+
+```{r}
+
+TCS_IDEAL_data$Individual <- as.factor(TCS_IDEAL_data$Individual)
+TCS_IDEAL_data$Type <- as.factor(TCS_IDEAL_data$Type)
+TCS_IDEAL_data$Nestbox <- as.factor(TCS_IDEAL_data$Nestbox)
+TCS_IDEAL_data$Age <- as.factor(TCS_IDEAL_data$Age)
+TCS_IDEAL_data$Region <- as.factor(TCS_IDEAL_data$Region)
+TCS_IDEAL_data$TypeAge <- as.factor(TCS_IDEAL_data$TypeAge)
+```
+
+```{r}
+TCS_IDEAL_data.side <- subset(TCS_IDEAL_data, Region == "Side")
+TCS_IDEAL_data.maxi <- subset(TCS_IDEAL_data, Region == "Maxilla")
+TCS_IDEAL_data.mand <- subset(TCS_IDEAL_data, Region == "Mandible")
+TCS_IDEAL_data.pala <- subset(TCS_IDEAL_data, Region == "Palate")
+```
+
+# Mi1 - h.theta_s - hue
+
+## Nestlings sex effect (no change compared to model without sex)
+
+```{r}
+#| echo: false
+#| output: false
+
+TCS_IDEAL_data.maxi$Type <- relevel(TCS_IDEAL_data.maxi$Type, ref = "Dark")
+TCS_IDEAL_data.pala$Type <- relevel(TCS_IDEAL_data.pala$Type, ref = "Dark")
+TCS_IDEAL_data.side$Type <- relevel(TCS_IDEAL_data.side$Type, ref = "Dark")
+TCS_IDEAL_data.mand$Type <- relevel(TCS_IDEAL_data.mand$Type, ref = "Dark")
+
+mi1.side.sex <- lmer(h.theta_s ~ (Type * Age) + Sex + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi1.maxi.sex <- lmer(h.theta_s ~ (Type * Age) + Sex + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.maxi)
+mi1.mand.sex <- lmer(h.theta_s ~ (Type * Age) + Sex + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.mand)
+mi1.pala.sex <- lmer(h.theta_s ~ (Type * Age) + Sex + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.pala)
+
+class(mi1.side.sex) <- "lmerMod"
+class(mi1.maxi.sex) <- "lmerMod"
+class(mi1.mand.sex) <- "lmerMod"
+class(mi1.pala.sex) <- "lmerMod"
+
+
+h.theta_s.sum.sex <- stargazer(mi1.side.sex, mi1.maxi.sex, mi1.mand.sex, mi1.pala.sex, digits = 2, type = "text", style = "default", title = "h.theta_s Mixed models (Estimate + (Std. Error)", column.labels = c("Flanges", "Maxilla", "Mandible", "Palate"))
+
+```
+
+```{r}
+
+modelsummary(list(mi1.side, mi1.maxi, mi1.mand, mi1.pala),
+             statistic = NULL,
+             estimate  = "{estimate} [{std.error}]")
+
+```
+
+## Without sex effect
+
+```{r}
+#| echo: false
+#| output: false
+
+TCS_IDEAL_data.maxi$Type <- relevel(TCS_IDEAL_data.maxi$Type, ref = "Dark")
+TCS_IDEAL_data.pala$Type <- relevel(TCS_IDEAL_data.pala$Type, ref = "Dark")
+TCS_IDEAL_data.side$Type <- relevel(TCS_IDEAL_data.side$Type, ref = "Dark")
+TCS_IDEAL_data.mand$Type <- relevel(TCS_IDEAL_data.mand$Type, ref = "Dark")
+
+mi1.side <- lmer(h.theta_s ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi1.maxi <- lmer(h.theta_s ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.maxi)
+mi1.mand <- lmer(h.theta_s ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.mand)
+mi1.pala <- lmer(h.theta_s ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.pala)
+
+class(mi1.side) <- "lmerMod"
+class(mi1.maxi) <- "lmerMod"
+class(mi1.mand) <- "lmerMod"
+class(mi1.pala) <- "lmerMod"
+
+h.theta_s.sum <- stargazer(mi1.side, mi1.maxi, mi1.mand, mi1.pala, digits = 2, type = "text", style = "default", title = "h.theta_s Mixed models (Estimate + (Std. Error)", column.labels = c("Flanges", "Maxilla", "Mandible", "Palate"))
+```
+
+```{r}
+#| echo: false
+h.theta_s.sum <- stargazer(mi1.side, mi1.maxi, mi1.mand, mi1.pala, digits = 2, type = "text", style = "default", title = "h.theta_s Mixed models (Estimate + (Std. Error)", column.labels = c("Flanges", "Maxilla", "Mandible", "Palate"))
+```
+
+## Graphs
+
+### Side revised
+
+```{r}
+summary(mi1.side)
+mi1.side.TypeAge <-lmer(h.theta_s ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi1.side.EM <- emmeans(mi1.side.TypeAge, ~TypeAge)
+
+
+plot.mi1.side <- plot(mi1.side.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans h.theta_s Side", plotit = F)
+
+head(plot.mi1.side) #sprawdzic kolejnosc grup w tabeli i dopisac zmienna z etykeita dla kolorou i linii laczacej grupy
+
+plot.mi1.side$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.mi1.side$group <- c("BF", "DF", "DF" ,"BF")
+plot.mi1.side$group1 <- c("A1", "A2", "A1" ,"A2")
+plot.mi1.side$type <- c("Bright", "Bright", "Dark" ,"Dark")
+
+
+psidetheta <- ggplot(plot.mi1.side, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  ggtitle("Flanges") + 
+  geom_hline(yintercept = plot.mi1.side[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") + 
+  geom_point(size = 4)+
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+  theme(legend.position = "none") +
+  ylab ("Hue") + xlab("Group")  +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12" , "Bright\nAge:12"))
+  
+psidetheta
+
+
+mi1.side.contr <- contrast(mi1.side.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+
+confint(mi1.side.contr) ##output z CI
+
+```
+
+### Maxilla - revised
+
+```{r}
+summary(mi1.maxi)
+mi1.maxi.TypeAge <-lmer(h.theta_s ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.maxi)
+mi1.maxi.EM <- emmeans(mi1.maxi.TypeAge, ~TypeAge)
+
+plot.mi1.maxi <- plot(mi1.maxi.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans h.theta_s Maxilla", plotit = F)
+
+head(plot.mi1.maxi)
+
+plot.mi1.maxi$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.mi1.maxi$group <- c("BF", "DF", "DF" ,"BF")
+plot.mi1.maxi$group1 <- c("A1", "A2", "A1" ,"A2")
+
+
+pmaxitheta <- ggplot(plot.mi1.maxi, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  ggtitle("Maxilla") + 
+  geom_hline(yintercept = plot.mi1.maxi[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") + 
+  geom_point(size = 4)+
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+  theme(legend.position = "none", axis.title.y = element_blank()) +
+  ylab ("h.theta_s") + xlab("Group")  +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12" , "Bright\nAge:12"))
+
+mi1.maxi.contr <- contrast(mi1.maxi.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+
+confint(mi1.maxi.contr) ##output z CI
+
+
+```
+
+### Mandible - revised
+
+```{r}
+summary(mi1.mand)
+mi1.mand.TypeAge <-lmer(h.theta_s ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.mand)
+mi1.mand.EM <- emmeans(mi1.mand.TypeAge, ~TypeAge)
+
+plot.mi1.mand <- plot(mi1.mand.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans h.theta_s Mandible", plotit = F)
+
+head(plot.mi1.mand)
+
+plot.mi1.mand$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.mi1.mand$group <- c("BF", "DF", "DF" ,"BF")
+plot.mi1.mand$group1 <- c("A1", "A2", "A1" ,"A2")
+
+pmandtheta <- ggplot(plot.mi1.mand, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  ggtitle("Mandible") + 
+  geom_hline(yintercept = plot.mi1.mand[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") + 
+  geom_point(size = 4)+
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+ theme(legend.position = "none", axis.title.y = element_blank()) +
+  ylab ("h.theta_s") + xlab("Group") +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12","Bright\nAge:12"))
+
+
+mi1.mand.contr <- contrast(mi1.mand.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+
+confint(mi1.mand.contr) ##output z CI
+```
+
+### Palate - revised
+
+```{r}
+summary(mi1.pala)
+mi1.pala.TypeAge <-lmer(h.theta_s ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.pala)
+mi1.pala.EM <- emmeans(mi1.pala.TypeAge, ~TypeAge)
+plot(mi1.pala.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans h.theta_s Palate") + theme_bw() + scale_y_discrete(limits = c("DarkA1", "BrightA1", "DarkA2", "BrightA2"))
+
+plot.mi1.pala <- plot(mi1.pala.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans h.theta_s Palate", plotit = F)
+
+head(plot.mi1.pala)
+
+plot.mi1.pala$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.mi1.pala$group <- c("BF", "DF", "DF" ,"BF")
+plot.mi1.pala$group1 <- c("A1", "A2", "A1" ,"A2")
+
+ppalatheta <- ggplot(plot.mi1.pala, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  ggtitle("Palate") + 
+  geom_hline(yintercept = plot.mi1.pala[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") +
+  geom_point(size = 4) +
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+  theme(legend.position = "none", axis.title.y = element_blank()) +
+  ylab ("h.theta_s") + xlab("Group") +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12","Bright\nAge:12"))
+
+
+
+mi1.pala.contr <- contrast(mi1.pala.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+confint(mi1.pala.contr) ##output z CI
+a2 <- psidetheta + pmaxitheta + pmandtheta + ppalatheta
+a1 <- psidetheta + pmaxitheta + pmandtheta + ppalatheta
+```
+
+# Mi4 - lum_s - luminance
+
+## Nestlings sex effect (no change compared to model without sex)
+
+```{r}
+TCS_IDEAL_data.maxi$Type <- relevel(TCS_IDEAL_data.maxi$Type, ref = "Dark")
+TCS_IDEAL_data.pala$Type <- relevel(TCS_IDEAL_data.pala$Type, ref = "Dark")
+TCS_IDEAL_data.side$Type <- relevel(TCS_IDEAL_data.side$Type, ref = "Dark")
+TCS_IDEAL_data.mand$Type <- relevel(TCS_IDEAL_data.mand$Type, ref = "Dark")
+
+mi4.side.sex <- lmer(lum_s ~ (Type * Age) + Sex + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi4.maxi.sex <- lmer(lum_s ~ (Type * Age) + Sex + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.maxi)
+mi4.mand.sex <- lmer(lum_s ~ (Type * Age) + Sex + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.mand)
+mi4.pala.sex <- lmer(lum_s ~ (Type * Age) + Sex + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.pala)
+
+class(mi4.side.sex) <- "lmerMod"
+class(mi4.maxi.sex) <- "lmerMod"
+class(mi4.mand.sex) <- "lmerMod"
+class(mi4.pala.sex) <- "lmerMod"
+
+lum_s.sum.sex <- stargazer(mi4.side.sex, mi4.maxi.sex, mi4.mand.sex, mi4.pala.sex, digits = 2, type = "text", style = "default", title = "lum_s Mixed models (Estimate + (Std. Error)", column.labels = c("Side", "Maxilla", "Mandible", "Palate"))
+```
+
+## Without sex effect
+
+```{r}
+#| echo: false
+#| output: false
+
+TCS_IDEAL_data.maxi$Type <- relevel(TCS_IDEAL_data.maxi$Type, ref = "Dark")
+TCS_IDEAL_data.pala$Type <- relevel(TCS_IDEAL_data.pala$Type, ref = "Dark")
+TCS_IDEAL_data.side$Type <- relevel(TCS_IDEAL_data.side$Type, ref = "Dark")
+TCS_IDEAL_data.mand$Type <- relevel(TCS_IDEAL_data.mand$Type, ref = "Dark")
+
+mi4.side <- lmer(lum_s ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi4.maxi <- lmer(lum_s ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.maxi)
+mi4.mand <- lmer(lum_s ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.mand)
+mi4.pala <- lmer(lum_s ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.pala)
+
+class(mi4.side) <- "lmerMod"
+class(mi4.maxi) <- "lmerMod"
+class(mi4.mand) <- "lmerMod"
+class(mi4.pala) <- "lmerMod"
+
+lum_s.sum <- stargazer(mi4.side, mi4.maxi, mi4.mand, mi4.pala, digits = 2, type = "text", style = "default", title = "lum_s Mixed models (Estimate + (Std. Error)", column.labels = c("Side", "Maxilla", "Mandible", "Palate"))
+```
+
+### Flanges - revised
+
+```{r}
+summary(mi4.side)
+mi4.side.TypeAge <-lmer(lum_s ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi4.side.EM <- emmeans(mi4.side.TypeAge, ~TypeAge)
+
+plot.mi4.side <- plot(mi4.side.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans lum_s Side", plotit = F)
+
+head(plot.mi4.side)
+
+plot.mi4.side$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.mi4.side$group <- c("BF", "DF", "DF" ,"BF")
+plot.mi4.side$group1 <- c("A1", "A2", "A1" ,"A2")
+
+psidelum <- ggplot(plot.mi4.side, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  geom_hline(yintercept = plot.mi4.side[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") +
+  geom_point(size = 4) +
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+  theme(legend.position = "none") +
+  ylab ("Luminance") + xlab("Group") +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12","Bright\nAge:12"))
+
+
+mi4.side.contr <- contrast(mi4.side.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+
+confint(mi4.side.contr) ##output z CI
+
+```
+
+### Maxilla - revised
+
+```{r}
+summary(mi4.maxi)
+mi4.maxi.TypeAge <-lmer(lum_s ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.maxi)
+mi4.maxi.EM <- emmeans(mi4.maxi.TypeAge, ~TypeAge)
+
+plot.mi4.maxi <- plot(mi4.maxi.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans lum_s Maxilla", plotit = F)
+
+head(plot.mi4.maxi)
+
+plot.mi4.maxi$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.mi4.maxi$group <- c("BF", "DF", "DF" ,"BF")
+plot.mi4.maxi$group1 <- c("A1", "A2", "A1" ,"A2")
+pmaxilum <- ggplot(plot.mi4.maxi, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  geom_hline(yintercept = plot.mi4.maxi[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") +
+  geom_point(size = 4) +
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+  theme(legend.position = "none", axis.title.y = element_blank()) +
+  ylab ("lum_s Maxilla") + xlab("Group") +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12","Bright\nAge:12"))
+
+
+
+mi4.maxi.contr <- contrast(mi4.maxi.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+
+confint(mi4.maxi.contr) ##output z CI
+```
+
+### Mandible - revised
+
+```{r}
+summary(mi4.mand)
+mi4.mand.TypeAge <-lmer(lum_s ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.mand)
+mi4.mand.EM <- emmeans(mi4.mand.TypeAge, ~TypeAge)
+
+plot.mi4.mand <- plot(mi4.mand.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans lum_s Mandible", plotit = F)
+
+head(plot.mi4.mand)
+
+plot.mi4.mand$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.mi4.mand$group <- c("BF", "DF", "DF" ,"BF")
+plot.mi4.mand$group1 <- c("A1", "A2", "A1" ,"A2")
+pmandlum <- ggplot(plot.mi4.mand, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  geom_hline(yintercept = plot.mi4.mand[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") +
+  geom_point(size = 4) +
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+  theme(legend.position = "none", axis.title.y = element_blank()) +
+  ylab ("lum_s Mandible") + xlab("Group") +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12","Bright\nAge:12"))
+
+
+
+mi4.mand.contr <- contrast(mi4.mand.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+
+confint(mi4.mand.contr) ##output z CI
+```
+
+### Palate - revised
+
+```{r}
+summary(mi4.pala)
+mi4.pala.TypeAge <-lmer(lum_s ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.pala)
+mi4.pala.EM <- emmeans(mi4.pala.TypeAge, ~TypeAge)
+
+plot.mi4.pala <- plot(mi4.pala.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans lum_s Palate", plotit = F)
+
+head(plot.mi4.pala)
+
+plot.mi4.pala$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.mi4.pala$group <- c("BF", "DF", "DF" ,"BF")
+plot.mi4.pala$group1 <- c("A1", "A2", "A1" ,"A2")
+ppalalum <- ggplot(plot.mi4.pala, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  geom_hline(yintercept = plot.mi4.pala[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") +
+  geom_point(size = 4) +
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+  theme(legend.position = "none", axis.title.y = element_blank()) +
+  ylab ("lum_s Palate") + xlab("Group") +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12","Bright\nAge:12"))
+
+
+mi4.pala.contr <- contrast(mi4.pala.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+confint(mi4.pala.contr) ##output z CI
+
+psidelum + pmaxilum + pmandlum + ppalalum
+```
+
+# Mi5 - S9_s
+
+## Nestlings sex effect (no change compared to model without sex)
+
+```{r}
+#| echo: false
+#| output: false
+mi5.side.sex <- lmer(S9_s ~ (Type * Age) + Sex + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi5.maxi.sex <- lmer(S9_s ~ (Type * Age) + Sex + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.maxi)
+mi5.mand.sex <- lmer(S9_s ~ (Type * Age) + Sex + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.mand)
+mi5.pala.sex <- lmer(S9_s ~ (Type * Age) + Sex + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.pala)
+
+class(mi5.side.sex) <- "lmerMod"
+class(mi5.maxi.sex) <- "lmerMod"
+class(mi5.mand.sex) <- "lmerMod"
+class(mi5.pala.sex) <- "lmerMod"
+
+S9_s.sum.sex<- stargazer(mi5.side.sex, mi5.maxi.sex, mi5.mand.sex, mi5.pala.sex, digits = 2, type = "text", style = "default", title = "S9_s Mixed models (Estimate + (Std. Error)", column.labels = c("Side", "Maxilla", "Mandible", "Palate"))
+```
+
+## Without sex effect
+
+```{r}
+#| echo: false
+#| output: false
+mi5.side <- lmer(S9_s ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi5.maxi <- lmer(S9_s ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.maxi)
+mi5.mand <- lmer(S9_s ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.mand)
+mi5.pala <- lmer(S9_s ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.pala)
+
+class(mi5.side) <- "lmerMod"
+class(mi5.maxi) <- "lmerMod"
+class(mi5.mand) <- "lmerMod"
+class(mi5.pala) <- "lmerMod"
+
+S9_s.sum <- stargazer(mi5.side, mi5.maxi, mi5.mand, mi5.pala, digits = 2,
+                      type = "text", style = "default", title = "S9_s Mixed models (Estimate + (Std. Error)", column.labels = c("Side", "Maxilla", "Mandible", "Palate"))
+```
+
+### Flanges - revised
+
+```{r}
+summary(mi5.side)
+mi5.side.TypeAge <-lmer(S9_s ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi5.side.EM <- emmeans(mi5.side.TypeAge, ~TypeAge)
+
+plot.mi5.side <- plot(mi5.side.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans S9 Side", plotit = F)
+
+head(plot.mi5.side)
+
+plot.mi5.side$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.mi5.side$group <- c("BF", "DF", "DF" ,"BF")
+plot.mi5.side$group1 <- c("A1", "A2", "A1" ,"A2")
+
+psideS9 <- ggplot(plot.mi5.side, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  scale_y_continuous(labels = number_format(accuracy = 0.1)) +
+  geom_hline(yintercept = plot.mi5.side[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") +
+  geom_point(size = 4) +
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+  theme(legend.position = "none") +
+  ylab ("Carotenoid chroma") + xlab("Group") +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12","Bright\nAge:12"))
+
+mi5.side.contr <- contrast(mi5.side.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+
+confint(mi5.side.contr) ##output z CI
+
+```
+
+### Maxilla - revised
+
+```{r}
+summary(mi5.maxi)
+mi5.maxi.TypeAge <-lmer(S9_s ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.maxi)
+mi5.maxi.EM <- emmeans(mi5.maxi.TypeAge, ~TypeAge)
+
+plot.mi5.maxi <- plot(mi5.maxi.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans S9 Maxilla", plotit = F)
+
+head(plot.mi5.maxi)
+
+plot.mi5.maxi$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.mi5.maxi$group <- c("BF", "DF", "DF" ,"BF")
+plot.mi5.maxi$group1 <- c("A1", "A2", "A1" ,"A2")
+
+pmaxiS9 <- ggplot(plot.mi5.maxi, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  geom_hline(yintercept = plot.mi5.maxi[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") +
+  geom_point(size = 4) +
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+  theme(legend.position = "none", axis.title.y = element_blank()) +
+  ylab ("S9 Maxilla") + xlab("Group") +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12","Bright\nAge:12"))
+
+
+mi5.maxi.contr <- contrast(mi5.maxi.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+
+confint(mi5.maxi.contr) ##output z CI
+```
+
+### Mandible - revised
+
+```{r}
+summary(mi5.mand)
+mi5.mand.TypeAge <-lmer(S9_s ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.mand)
+mi5.mand.EM <- emmeans(mi5.mand.TypeAge, ~TypeAge)
+
+
+plot.mi5.mand <- plot(mi5.mand.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans S9 Mandible", plotit = F)
+
+head(plot.mi5.mand)
+
+plot.mi5.mand$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.mi5.mand$group <- c("BF", "DF", "DF" ,"BF")
+plot.mi5.mand$group1 <- c("A1", "A2", "A1" ,"A2")
+
+pmandS9 <- ggplot(plot.mi5.mand, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  geom_hline(yintercept = plot.mi5.mand[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") +
+  geom_point(size = 4) +
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+   theme(legend.position = "none", axis.title.y = element_blank()) +
+  ylab ("S9 Mandible") + xlab("Group") +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12","Bright\nAge:12"))
+
+mi5.mand.contr <- contrast(mi5.mand.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+
+confint(mi5.mand.contr) ##output z CI
+```
+
+### Palate - revised
+
+```{r}
+summary(mi5.pala)
+mi5.pala.TypeAge <-lmer(S9_s ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.pala)
+mi5.pala.EM <- emmeans(mi5.pala.TypeAge, ~TypeAge)
+
+plot.mi5.pala <- plot(mi5.pala.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans S9 Palate", plotit = F)
+
+head(plot.mi5.pala)
+
+plot.mi5.pala$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.mi5.pala$group <- c("BF", "DF", "DF" ,"BF")
+plot.mi5.pala$group1 <- c("A1", "A2", "A1" ,"A2")
+
+ppalaS9 <- ggplot(plot.mi5.pala, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  geom_hline(yintercept = plot.mi5.pala[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") +
+  geom_point(size = 4) +
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+  theme(legend.position = "none", axis.title.y = element_blank()) +
+  ylab ("S9 Palate") + xlab("Group") +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12","Bright\nAge:12"))
+
+
+mi5.pala.contr <- contrast(mi5.pala.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+confint(mi5.pala.contr) ##output z CI
+
+psideS9 + pmaxiS9 + pmandS9 + ppalaS9
+```
+
+# PATCHWORK
+
+```{r}
+
+My_Theme = theme(
+  axis.title.x = element_blank(),
+  axis.text.x = element_blank(),
+  axis.text.y = element_text(size = 8),
+  axis.title.y = element_text(size = 10)) + 
+  theme(axis.text.y = element_text(colour = "black")) + theme_bw() + theme_update(plot.title = element_text(hjust = 0.5), legend.position = "none") 
+
+My_Theme_S9 = theme(
+  axis.title.x = element_blank(),
+  axis.text.x = element_text(size = 8),
+  axis.text.y = element_text(size = 8),
+  axis.title.y = element_text(size = 10)) + 
+  theme(axis.text.x = element_text(colour = "black"), axis.text.y = element_text(colour = "black")) + theme_bw() + theme_update(plot.title = element_text(hjust = 0.5),legend.position = "none")
+```
+
+## Revised Graph3 January 2026
+
+```{r}
+pi.theta <- (psidetheta | pmaxitheta | pmandtheta | ppalatheta) & My_Theme
+pi.theta <- pi.theta & labs(y = 'Hue', x= '')
+pi.theta <- pi.theta + plot_layout(axes = "collect")
+pi.theta <- pi.theta + plot_layout(axes = "collect")
+pi.theta <- pi.theta & My_Theme
+
+pi.lum <- (psidelum | pmaxilum | pmandlum | ppalalum) & My_Theme 
+pi.lum <- pi.lum & labs(y= 'Luminance', x= '')
+pi.lum <- pi.lum + plot_layout(axes = "collect")
+pi.lum
+
+pi.S9 <- (psideS9 | pmaxiS9 | pmandS9 | ppalaS9) & My_Theme_S9
+pi.S9 <- pi.S9 & labs(y= 'Carotenoid chroma', x= '')
+pi.S9 <- pi.S9 + plot_layout(axes = "collect")
+pi.S9
+
+ideal_patchwork <- pi.theta /pi.lum / pi.S9
+id_p <- ideal_patchwork & theme(axis.text.x = element_blank())
+id_p + theme_bw() + theme(legend.position = "none")
+```
+
+```{r}
+pi.theta <- (psidetheta | pmaxitheta | pmandtheta | ppalatheta) & My_Theme
+pi.theta <- pi.theta & labs(y = 'h.theta_s', x= '')
+pi.theta <- pi.theta + plot_layout(axes = "collect")
+pi.theta <- pi.theta + plot_layout(axes = "collect")
+pi.theta <- pi.theta & My_Theme
+
+#pi.phi <- (psidephi | pmaxiphi | pmandphi | ppalaphi) & My_Theme 
+#pi.phi <- pi.phi & labs(y= 'h.phi_s', x= '')
+#pi.phi <- pi.phi + plot_layout(axes = "collect")
+#pi.phi
+
+#pi.r.ach <- (psideach | pmaxiach | pmandach | ppalaach) & My_Theme 
+#pi.r.ach <- pi.r.ach & labs(y= 'r.achieved_s', x= '')
+#pi.r.ach <- pi.r.ach + plot_layout(axes = "collect")
+#pi.r.ach
+
+pi.lum <- (psidelum | pmaxilum | pmandlum | ppalalum) & My_Theme 
+pi.lum <- pi.lum & labs(y= 'lum_s', x= '')
+pi.lum <- pi.lum + plot_layout(axes = "collect")
+pi.lum
+
+pi.S9 <- (psideS9 | pmaxiS9 | pmandS9 | ppalaS9) & My_Theme_S9
+pi.S9 <- pi.S9 & labs(y= 'S9_s', x= '')
+pi.S9 <- pi.S9 + plot_layout(axes = "collect")
+pi.S9
+
+ideal_patchwork <- pi.theta/pi.lum / pi.S9
+id_p <- ideal_patchwork & theme(axis.text.x = element_blank())
+id_p + theme_bw() + theme(legend.position = "none")
+
+```
+
+```{r}
+seg1 <- psidetheta + labs(y= 'h.theta_s')
+
+
+         
+seg1
+seg1 <- seg1 + plot_layout(axes = "collect")
+
+seg1 <- (psidephi / psidephi / psideach / psidelum/psideS9) & labs(y= 'h.theta_s') 
+seg1 <- seg1 + plot_layout(axes = "collect")
+
+seg1 <- (psidetheta / psidephi / psideach / psidelum/psideS9) & labs(y= 'h.theta_s') 
+seg1 <- seg1 + plot_layout(axes = "collect")
+
+seg1 <- (psidetheta / psidephi / psideach / psidelum/psideS9) & labs(y= 'h.theta_s') 
+seg1 <- seg1 + plot_layout(axes = "collect")
+
+
+
+(pmaxitheta/pmaxilum/pmaxiS9)
+```
+
+# GGARRANGE
+
+```{r}
+
+grid1 <- ggarrange(psidetheta, pmaxitheta, pmandtheta, ppalatheta,
+                   ncol = 4, nrow = 1)
+
+grid2 <- ggarrange(psidelum, pmaxilum, pmandlum, ppalalum,
+                   ncol = 4, nrow = 1)
+
+grid3 <- ggarrange(psideS9, pmaxiS9, pmandS9, ppalaS9,
+                   ncol = 4, nrow = 1)
+  
+grid_ideal <- ggarrange(grid1, grid2, grid3,labels = c("A", "B" , "C"),
+                        ncol = 1, nrow = 3)  
+
+ggsave(filename = "figure2.pdf", device = "pdf")
+       
+
+#real illuminant: 
+#grid4 <- ggarrange(rsidetheta, rmaxitheta, rmandtheta, rpalatheta, ncol = 4, nrow = 1)
+#grid5 <- ggarrange(rsidelum, rmaxilum, rmandlum, rpalalum, ncol = 4, nrow = 1)      
+#grid_real <- ggarrange(grid4, grid5, ncol = 1, nrow = 2, labels = c("A", "B"))
+                   
+#grid_real
+
+#ggsave(filename = "figure3.pdf", device = "pdf")
+        
+
+```
+
+### Morphometric data analysis
+
+Simple ANOVA, and post hoc Tukey
+
+```{r}
+
+anov.tarsus <- aov(Tarsus ~ TypeAge, data = TCS_IDEAL_data.side)
+TukeyHSD(anov.tarsus)
+plot(TukeyHSD(anov.tarsus))
+par(mfrow = c(2,2))
+plot(anov.tarsus)
+
+plot(Tarsus ~ TypeAge, data = TCS_IDEAL_data.side) 
+
+anov.mass <- aov(Mass ~ TypeAge, data = TCS_IDEAL_data.side)
+TukeyHSD(anov.mass)
+plot(anov.mass)
+plot(Mass ~ TypeAge, data = TCS_IDEAL_data.side)
+
+anov.head <- aov(Head ~ TypeAge, data = TCS_IDEAL_data.side)
+TukeyHSD(anov.head)
+plot(anov.head)
+plot(Head ~ TypeAge, data = TCS_IDEAL_data.side)
+
+anov.wing <- aov(Wing ~ TypeAge, data = TCS_IDEAL_data.side)
+TukeyHSD(anov.wing)
+plot(anov.wing)
+plot(Wing ~ TypeAge, data = TCS_IDEAL_data.side)
+
+
+
+plot(Tarsus ~ TypeAge, data = TCS_IDEAL_data.side) 
+plot(Mass ~ TypeAge, data = TCS_IDEAL_data.side)
+plot(Head ~ TypeAge, data = TCS_IDEAL_data.side)
+plot(Wing ~ TypeAge, data = TCS_IDEAL_data.side)
+
+
+```
+
+# GLMM Biometirc variables by treatment and age
+
+## Tarsus
+
+```{r}
+TCS_IDEAL_data.side$Type <- relevel(TCS_IDEAL_data.side$Type, ref = "Bright")
+
+model.tarsus <- lmer(Tarsus ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+summary(model.tarsus)
+
+tarsus.TypeAge <-lmer(Tarsus ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+tarsus.EM <- emmeans(tarsus.TypeAge, ~TypeAge)
+
+plot.tarsus <- plot(tarsus.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans Tarsus", plotit = F)
+
+head(plot.tarsus)
+
+plot.tarsus$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.tarsus$group <- c("BF", "DF", "DF" ,"BF")
+plot.tarsus$group1 <- c("A1", "A2", "A1" ,"A2")
+
+ptarsus <- ggplot(plot.tarsus, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  geom_hline(yintercept = plot.tarsus[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") +
+  geom_point(size = 4) +
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+  theme(legend.position = "none", axis.title.y = element_text())+
+  ylab ("Tarsus length") + xlab("Group") +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12","Bright\nAge:12"))
+
+
+tarsus.contr <- contrast(tarsus.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+confint(tarsus.contr)
+```
+
+## Mass
+
+```{r}
+model.mass <- lmer(Mass ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+summary(model.mass)
+mass.TypeAge <-lmer(Mass ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mass.EM <- emmeans(mass.TypeAge, ~TypeAge)
+
+plot.mass <- plot(mass.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans Mass", plotit = F)
+
+head(plot.mass)
+
+plot.mass$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.mass$group <- c("BF", "DF", "DF" ,"BF")
+plot.mass$group1 <- c("A1", "A2", "A1" ,"A2")
+
+pmass <- ggplot(plot.mass, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  geom_hline(yintercept = plot.mass[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") +
+  geom_point(size = 4) +
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+  theme(legend.position = "none", axis.title.y = element_text()) +
+  ylab ("Body mass") + xlab("Group") +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12","Bright\nAge:12"))
+
+
+mass.contr <- contrast(mass.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+confint(mass.contr)
+```
+
+## Head
+
+```{r}
+model.head <- lmer(Head ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+summary(model.head)
+head.TypeAge <-lmer(Head ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+head.EM <- emmeans(head.TypeAge, ~TypeAge)
+
+plot.head <- plot(head.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans Head", plotit = F)
+
+head(plot.head)
+
+plot.head$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.head$group <- c("BF", "DF", "DF" ,"BF")
+plot.head$group1 <- c("A1", "A2", "A1" ,"A2")
+
+phead <- ggplot(plot.head, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  geom_hline(yintercept = plot.head[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") +
+  geom_point(size = 4) +
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+  theme(legend.position = "none", axis.title.y = element_text()) +
+  ylab ("Head length") + xlab("Group") +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12","Bright\nAge:12"))
+
+
+head.contr <- contrast(head.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+confint(head.contr)
+```
+
+## Wing
+
+```{r}
+model.wing <- lmer(Wing ~ Type * Age + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+summary(model.wing)
+
+wing.TypeAge <-lmer(Wing ~ TypeAge + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+wing.EM <- emmeans(wing.TypeAge, ~TypeAge)
+
+plot.wing <- plot(wing.EM, horizontal = FALSE, colors = "darkgreen", xlab = "emmeans Head", plotit = F)
+
+head(plot.wing)
+
+plot.wing$TypeAge <- c("Bright\nAge:8", "Bright\nAge:12", "Dark\nAge:8", "Dark\nAge:12")
+plot.wing$group <- c("BF", "DF", "DF" ,"BF")
+plot.wing$group1 <- c("A1", "A2", "A1" ,"A2")
+
+pwing <- ggplot(plot.wing, aes(x = TypeAge, y = the.emmean, ymin =  lower.CL, ymax = upper.CL, color = group))  +
+  geom_hline(yintercept = plot.wing[3, "the.emmean"], alpha = 0.5, lty = 2) +
+  geom_line(aes(group = group), color = "black") +
+  geom_point(size = 4) +
+  geom_errorbar(lwd = 1, width = 0) +
+  theme_bw() + theme(text = element_text(size = 12)) +
+  theme(legend.position = "none", axis.title.y = element_text())+
+  ylab ("Wing length") + xlab("Group") +
+  scale_x_discrete(limits = c("Dark\nAge:8", "Bright\nAge:8", "Dark\nAge:12","Bright\nAge:12"))
+
+
+wing.contr <- contrast(wing.EM, list(B1_D2 = c(-1,0,0,1), 
+                                            D1_B2 = c(0,1,-1,0),
+                                            B1_D1 = c(-1,0,1,0), 
+                                            B2_D2 = c(0,1,0,-1))) 
+confint(wing.contr)
+
+class(tarsus.TypeAge) <- "lmerMod"
+class(mass.TypeAge) <- "lmerMod"
+class(head.TypeAge) <- "lmerMod"
+class(wing.TypeAge) <- "lmerMod"
+
+biometr.sum.typeage <- stargazer(tarsus.TypeAge, mass.TypeAge, head.TypeAge, wing.TypeAge, digits = 2, type = "text", style = "default", title = "Biometry Mixed models (Estimate + (Std. Error)")
+
+
+class(model.tarsus) <- "lmerMod"
+class(model.mass) <- "lmerMod"
+class(model.head) <- "lmerMod"
+class(model.wing) <- "lmerMod"
+
+biometr.sum <- stargazer(model.tarsus, model.mass, model.head, model.wing, digits = 2, type = "text", style = "default", title = "Biometry Mixed models (Estimate + (Std. Error)")
+```
+
+## Graphs biometry
+
+```{r}
+
+
+(ptarsus + pmass) / (phead + pwing)
+
+
+biometry_grid <- ggarrange(ptarsus, pmass, phead, pwing, labels = c("A", "B" , "C", "D"),ncol = 2, nrow = 2)
+  
+ 
+```
+
+## Biometry summary
+
+```{r}
+
+class(model.tarsus) <- "lmerMod"
+class(model.mass) <- "lmerMod"
+class(model.head) <- "lmerMod"
+class(model.wing) <- "lmerMod"
+
+biometr.sum <- stargazer(model.tarsus, model.mass, model.head, model.wing, digits = 2, type = "text", style = "default", title = "Biometry Mixed models (Estimate + (Std. Error)")
+```
+
+# GLMM colour by treatment age and biometric variables - TARSUS
+
+## HUE with interaction
+
+```{r}
+
+TCS_IDEAL_data.maxi$Type <- relevel(TCS_IDEAL_data.maxi$Type, ref = "Dark")
+TCS_IDEAL_data.pala$Type <- relevel(TCS_IDEAL_data.pala$Type, ref = "Dark")
+TCS_IDEAL_data.side$Type <- relevel(TCS_IDEAL_data.side$Type, ref = "Dark")
+TCS_IDEAL_data.mand$Type <- relevel(TCS_IDEAL_data.mand$Type, ref = "Dark")
+
+mi1.side.tarsus <- lmer(h.theta_s ~ (Age * Type) + Tarsus_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi1.maxi.tarsus <- lmer(h.theta_s ~ (Age * Type) + Tarsus_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.maxi)
+mi1.mand.tarsus <- lmer(h.theta_s ~ (Age * Type) + Tarsus_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.mand)
+mi1.pala.tarsus <- lmer(h.theta_s ~ (Age * Type) + Tarsus_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.pala)
+
+class(mi1.side.tarsus) <- "lmerMod"
+class(mi1.maxi.tarsus) <- "lmerMod"
+class(mi1.mand.tarsus) <- "lmerMod"
+class(mi1.pala.tarsus) <- "lmerMod"
+
+
+h.theta_s.sum.tarsus <- stargazer(mi1.side.tarsus, mi1.maxi.tarsus, mi1.mand.tarsus, mi1.pala.tarsus, digits = 2, type = "text", style = "default", title = "h.theta_s Mixed models (Estimate + (Std. Error)", column.labels = c("Flanges", "Maxilla", "Mandible", "Palate"))
+
+
+h.theta.pred.side.tars <- plot(predict_response(mi1.side.tarsus, "Tarsus_s")) + 
+  (ggtitle("Flanges"))
+h.theta.pred.maxi.tars <- plot(predict_response(mi1.maxi.tarsus, "Tarsus_s")) + 
+  (ggtitle("Maxilla"))
+h.theta.pred.mand.tars <- plot(predict_response(mi1.mand.tarsus, "Tarsus_s")) + 
+  (ggtitle("Mandible"))
+h.theta.pred.pala.tars <- plot(predict_response(mi1.pala.tarsus, "Tarsus_s"))+ 
+  (ggtitle("Palate"))
+
+(h.theta.pred.side.tars + h.theta.pred.maxi.tars) / (h.theta.pred.mand.tars + h.theta.pred.pala.tars)
+
+
+
+```
+
+## Luminance with interaction
+
+```{r}
+TCS_IDEAL_data.side$Type <- relevel(TCS_IDEAL_data.side$Type, ref = "Dark")
+TCS_IDEAL_data.maxi$Type <- relevel(TCS_IDEAL_data.maxi$Type, ref = "Dark")
+TCS_IDEAL_data.mand$Type <- relevel(TCS_IDEAL_data.mand$Type, ref = "Dark")
+TCS_IDEAL_data.pala$Type <- relevel(TCS_IDEAL_data.pala$Type, ref = "Dark")
+
+
+
+mi4.side.tarsus <- lmer(lum_s ~ (Age * Type) + Tarsus_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi4.maxi.tarsus <- lmer(lum_s ~ (Age * Type) + Tarsus_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.maxi)
+mi4.mand.tarsus <- lmer(lum_s ~ (Age * Type) + Tarsus_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.mand)
+mi4.pala.tarsus <- lmer(lum_s ~ (Age * Type) + Tarsus_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.pala)
+
+class(mi4.side.tarsus) <- "lmerMod"
+class(mi4.maxi.tarsus) <- "lmerMod"
+class(mi4.mand.tarsus) <- "lmerMod"
+class(mi4.pala.tarsus) <- "lmerMod"
+
+
+lum.sum.tarsus <- stargazer(mi4.side.tarsus, mi4.maxi.tarsus, mi4.mand.tarsus, mi4.pala.tarsus, digits = 2, type = "text", style = "default", title = "Luminance Mixed models (Estimate + (Std. Error)", column.labels = c("Flanges", "Maxilla", "Mandible", "Palate"))
+
+
+
+lum.pred.side.tars <- plot(predict_response(mi4.side.tarsus, "Tarsus_s")) + 
+  (ggtitle("Flanges"))
+lum.pred.maxi.tars <- plot(predict_response(mi4.maxi.tarsus, "Tarsus_s")) + 
+  (ggtitle("Maxilla"))
+lum.pred.mand.tars <- plot(predict_response(mi4.mand.tarsus, "Tarsus_s")) + 
+  (ggtitle("Mandible"))
+lum.pred.pala.tars <- plot(predict_response(mi4.pala.tarsus, "Tarsus_s"))+ 
+  (ggtitle("Palate"))
+
+(lum.pred.side.tars + lum.pred.maxi.tars) / (lum.pred.mand.tars + lum.pred.pala.tars)
+
+```
+
+## **Carotenoid chroma**
+
+```{r}
+TCS_IDEAL_data.side$Type <- relevel(TCS_IDEAL_data.side$Type, ref = "Dark")
+TCS_IDEAL_data.maxi$Type <- relevel(TCS_IDEAL_data.maxi$Type, ref = "Dark")
+TCS_IDEAL_data.mand$Type <- relevel(TCS_IDEAL_data.mand$Type, ref = "Dark")
+TCS_IDEAL_data.pala$Type <- relevel(TCS_IDEAL_data.pala$Type, ref = "Dark")
+
+
+
+mi5.side.tarsus <- lmer(S9_s ~ (Age * Type) + Tarsus_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi5.maxi.tarsus <- lmer(S9_s ~ (Age * Type) + Tarsus_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.maxi)
+mi5.mand.tarsus <- lmer(S9_s ~ (Age * Type) + Tarsus_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.mand)
+mi5.pala.tarsus <- lmer(S9_s ~ (Age * Type) + Tarsus_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.pala)
+
+class(mi5.side.tarsus) <- "lmerMod"
+class(mi5.maxi.tarsus) <- "lmerMod"
+class(mi5.mand.tarsus) <- "lmerMod"
+class(mi5.pala.tarsus) <- "lmerMod"
+
+
+S9.sum.tarsus <- stargazer(mi5.side.tarsus, mi5.maxi.tarsus, mi5.mand.tarsus, mi5.pala.tarsus, digits = 2, type = "text", style = "default", title = "Carotenoid chroma Mixed models (Estimate + (Std. Error)", column.labels = c("Flanges", "Maxilla", "Mandible", "Palate"))
+
+
+
+S9.pred.side.tars <- plot(predict_response(mi5.side.tarsus, "Tarsus_s")) + 
+  (ggtitle("Flanges"))
+S9.pred.maxi.tars <- plot(predict_response(mi5.maxi.tarsus, "Tarsus_s")) + 
+  (ggtitle("Maxilla"))
+S9.pred.mand.tars <- plot(predict_response(mi5.mand.tarsus, "Tarsus_s")) + 
+  (ggtitle("Mandible"))
+S9.pred.pala.tars <- plot(predict_response(mi5.pala.tarsus, "Tarsus_s"))+ 
+  (ggtitle("Palate"))
+
+(S9.pred.side.tars + S9.pred.maxi.tars) / (S9.pred.mand.tars + S9.pred.pala.tars)
+
+```
+
+# GLMM colour by treatment age and biometric variables - Mass
+
+## HUE with interaction
+
+```{r}
+TCS_IDEAL_data.maxi$Type <- relevel(TCS_IDEAL_data.maxi$Type, ref = "Dark")
+TCS_IDEAL_data.pala$Type <- relevel(TCS_IDEAL_data.pala$Type, ref = "Dark")
+TCS_IDEAL_data.side$Type <- relevel(TCS_IDEAL_data.side$Type, ref = "Dark")
+TCS_IDEAL_data.mand$Type <- relevel(TCS_IDEAL_data.mand$Type, ref = "Dark")
+
+mi1.side.Mass <- lmer(h.theta_s ~ (Age * Type) + Mass_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi1.maxi.Mass <- lmer(h.theta_s ~ (Age * Type) + Mass_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.maxi)
+mi1.mand.Mass <- lmer(h.theta_s ~ (Age * Type) + Mass_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.mand)
+mi1.pala.Mass <- lmer(h.theta_s ~ (Age * Type) + Mass_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.pala)
+
+class(mi1.side.Mass) <- "lmerMod"
+class(mi1.maxi.Mass) <- "lmerMod"
+class(mi1.mand.Mass) <- "lmerMod"
+class(mi1.pala.Mass) <- "lmerMod"
+
+
+h.theta_s.sum.Mass <- stargazer(mi1.side.Mass, mi1.maxi.Mass, mi1.mand.Mass, mi1.pala.Mass, digits = 2, type = "text", style = "default", title = "h.theta_s Mixed models (Estimate + (Std. Error)", column.labels = c("Flanges", "Maxilla", "Mandible", "Palate"))
+
+
+h.theta.pred.side.Mass <- plot(predict_response(mi1.side.Mass, "Mass_s")) + 
+  (ggtitle("Flanges"))
+h.theta.pred.maxi.Mass <- plot(predict_response(mi1.maxi.Mass, "Mass_s")) + 
+  (ggtitle("Maxilla"))
+h.theta.pred.mand.Mass <- plot(predict_response(mi1.mand.Mass, "Mass_s")) + 
+  (ggtitle("Mandible"))
+h.theta.pred.pala.Mass <- plot(predict_response(mi1.pala.Mass, "Mass_s"))+ 
+  (ggtitle("Palate"))
+
+(h.theta.pred.side.Mass + h.theta.pred.maxi.Mass) / (h.theta.pred.mand.Mass + h.theta.pred.pala.Mass)
+
+```
+
+## Luminance with interaction
+
+```{r}
+TCS_IDEAL_data.side$Type <- relevel(TCS_IDEAL_data.side$Type, ref = "Dark")
+TCS_IDEAL_data.maxi$Type <- relevel(TCS_IDEAL_data.maxi$Type, ref = "Dark")
+TCS_IDEAL_data.mand$Type <- relevel(TCS_IDEAL_data.mand$Type, ref = "Dark")
+TCS_IDEAL_data.pala$Type <- relevel(TCS_IDEAL_data.pala$Type, ref = "Dark")
+
+
+
+mi4.side.Mass <- lmer(lum_s ~ (Age * Type) + Mass_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi4.maxi.Mass <- lmer(lum_s ~ (Age * Type) + Mass_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.maxi)
+mi4.mand.Mass <- lmer(lum_s ~ (Age * Type) + Mass_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.mand)
+mi4.pala.Mass <- lmer(lum_s ~ (Age * Type) + Mass_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.pala)
+
+class(mi4.side.Mass) <- "lmerMod"
+class(mi4.maxi.Mass) <- "lmerMod"
+class(mi4.mand.Mass) <- "lmerMod"
+class(mi4.pala.Mass) <- "lmerMod"
+
+
+lum.sum.Mass <- stargazer(mi4.side.Mass, mi4.maxi.Mass, mi4.mand.Mass, mi4.pala.Mass, digits = 2, type = "text", style = "default", title = "Luminance Mixed models (Estimate + (Std. Error)", column.labels = c("Flanges", "Maxilla", "Mandible", "Palate"))
+
+
+
+lum.pred.side.Mass <- plot(predict_response(mi4.side.Mass, "Mass_s")) + 
+  (ggtitle("Flanges"))
+lum.pred.maxi.Mass <- plot(predict_response(mi4.maxi.Mass, "Mass_s")) + 
+  (ggtitle("Maxilla"))
+lum.pred.mand.Mass <- plot(predict_response(mi4.mand.Mass, "Mass_s")) + 
+  (ggtitle("Mandible"))
+lum.pred.pala.Mass <- plot(predict_response(mi4.pala.Mass, "Mass_s"))+ 
+  (ggtitle("Palate"))
+
+(lum.pred.side.Mass + lum.pred.maxi.Mass) / (lum.pred.mand.Mass + lum.pred.pala.Mass)
+```
+
+## **Carotenoid chroma**
+
+```{r}
+TCS_IDEAL_data.side$Type <- relevel(TCS_IDEAL_data.side$Type, ref = "Dark")
+TCS_IDEAL_data.maxi$Type <- relevel(TCS_IDEAL_data.maxi$Type, ref = "Dark")
+TCS_IDEAL_data.mand$Type <- relevel(TCS_IDEAL_data.mand$Type, ref = "Dark")
+TCS_IDEAL_data.pala$Type <- relevel(TCS_IDEAL_data.pala$Type, ref = "Dark")
+
+
+
+mi5.side.Mass <- lmer(S9_s ~ (Age * Type) + Mass_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.side)
+mi5.maxi.Mass <- lmer(S9_s ~ (Age * Type) + Mass_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.maxi)
+mi5.mand.Mass <- lmer(S9_s ~ (Age * Type) + Mass_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.mand)
+mi5.pala.Mass <- lmer(S9_s ~ (Age * Type) + Mass_s + (1|Individual) + (1|Nestbox), data = TCS_IDEAL_data.pala)
+
+class(mi5.side.Mass) <- "lmerMod"
+class(mi5.maxi.Mass) <- "lmerMod"
+class(mi5.mand.Mass) <- "lmerMod"
+class(mi5.pala.Mass) <- "lmerMod"
+
+
+S9.sum.Mass <- stargazer(mi5.side.Mass, mi5.maxi.Mass, mi5.mand.Mass, mi5.pala.Mass, digits = 2, type = "text", style = "default", title = "Carotenoid chroma Mixed models (Estimate + (Std. Error)", column.labels = c("Flanges", "Maxilla", "Mandible", "Palate"))
+
+
+
+S9.pred.side.Mass <- plot(predict_response(mi5.side.Mass, "Mass_s")) + 
+  (ggtitle("Flanges"))
+S9.pred.maxi.Mass <- plot(predict_response(mi5.maxi.Mass, "Mass_s")) + 
+  (ggtitle("Maxilla"))
+S9.pred.mand.Mass <- plot(predict_response(mi5.mand.Mass, "Mass_s")) + 
+  (ggtitle("Mandible"))
+S9.pred.pala.Mass <- plot(predict_response(mi5.pala.Mass, "Mass_s"))+ 
+  (ggtitle("Palate"))
+
+(S9.pred.side.Mass + S9.pred.maxi.Mass) / (S9.pred.mand.Mass + S9.pred.pala.Mass)
+```
+
+```{r}
+# helpers
+
+lumpest <- function(model) {
+    est1 <- summary(model)$coefficients["TypeBright", "Estimate"]
+    est2 <- summary(model)$coefficients["TypeBright:AgeA2", "Estimate"]
+    est <- est1 + est2
+
+    vcv <- vcov(model, correlation = FALSE)
+    se1 <- summary(model)$coefficients["TypeBright", "Std. Error"]
+    se2 <- summary(model)$coefficients["TypeBright:AgeA2", "Std. Error"]
+    se <- sqrt(se1^2 + se2^2 + 2 * vcv["TypeBright", "TypeBright:AgeA2"])
+
+    return(c(Estimate = est, SE = se))
+}
+
+starring <- function(lumpest) {
+    zet <- lumpest[1] / lumpest[2]
+    pval <- 2 * (1 - pnorm(abs(zet)))
+    if (pval < 0.001) {
+        stars <- "***"
+    } else if (pval < 0.01) {
+        stars <- "**"
+    } else if (pval < 0.05) {
+        stars <- "*"
+    } else {
+        stars <- ""
+    }
+
+    return(stars)
+}
+```
